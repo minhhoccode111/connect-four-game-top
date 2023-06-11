@@ -16,11 +16,9 @@ const cell = () => {
 
 const player = (mark, bot) => {
   const getMark = () => mark;
-  const setMark = (m) => (mark = m);
   const isBot = () => bot;
   return {
     getMark,
-    setMark,
     isBot,
   };
 };
@@ -49,16 +47,16 @@ const gameBoard = (() => {
   const cols = 7;
   let board = [];
 
-  for (let i = rows - 1; i >= 0; i--) {
-    board[i] = Array(cols).fill(cell());
-  } //This works the same way as below
-
   // for (let i = rows - 1; i >= 0; i--) {
-  //   board[i] = [];
-  //   for (let j = cols - 1; j >= 0; j--) {
-  //     board[i][j] = cell();
-  //   }
-  // }
+  //   board[i] = Array(cols).fill(cell());
+  // } //This works the same way as below
+
+  for (let i = rows - 1; i >= 0; i--) {
+    board[i] = [];
+    for (let j = cols - 1; j >= 0; j--) {
+      board[i][j] = cell();
+    }
+  }
   let winsCombination = [];
 
   //horizontal (24 combinations)
@@ -124,13 +122,19 @@ const gameBoard = (() => {
   };
 
   //Use movesLeftOnEachCol so that I don't have to loop through every position of a column to check whether that column is full
-  let movesLeftOnEachCol = Array(cols).fill(rows);
+  let movesLeftOnEachCol = [];
+  for (let i = cols - 1; i >= 0; i--) {
+    movesLeftOnEachCol.push(rows);
+  }
   console.log(movesLeftOnEachCol); //[6,6,6,6,6,6,6]
   const canMakeMoveOnCol = (col) => movesLeftOnEachCol[col] > 0; //if a specific col has moves left = 0, then return false (means can't make move on that col)
   const minusMovesLeftOnACol = (col) => movesLeftOnEachCol[col]--; //if move is valid then moves left on that col decrease
   const getMovesLeftOnCol = (col) => movesLeftOnEachCol[col]; //Use this to drop token of place mark,example if moves left on a specific col is 6 then wee place mark on board[6-1][col] (rows index)
   const resetMovesLeftOnEachCol = () => {
-    movesLeftOnEachCol = Array(cols).fill(rows);
+    movesLeftOnEachCol = [];
+    for (let i = cols - 1; i >= 0; i--) {
+      movesLeftOnEachCol.push(rows);
+    }
   };
 
   const checkCol = {
@@ -143,12 +147,15 @@ const gameBoard = (() => {
   const getBoard = () => board;
   const setBoard = (c, mark) => {
     let lowestEmpty = getMovesLeftOnCol(c) - 1;
-    board[lowestEmpty][c] = mark;
+    board[lowestEmpty][c].setValue(mark);
   };
   const resetBoard = () => {
     board = [];
     for (let i = rows - 1; i >= 0; i--) {
-      board[i] = Array(cols).fill(cell());
+      board[i] = [];
+      for (let j = cols - 1; j >= 0; j--) {
+        board[i][j] = cell();
+      }
     }
   };
   const grid = {
@@ -163,7 +170,8 @@ const gameBoard = (() => {
 const uiController = (() => {
   //Display on the console for now
   const display = (board) => {
-    console.table(board.map((r) => r.map((c) => c.getValue())));
+    // console.table(board.map((row) => row.map((col) => col)));
+    console.table(board.map((row) => row.map((col) => col.getValue())));
   };
   return { display };
 })();
@@ -173,9 +181,9 @@ const gameController = (() => {
   const ui = uiController;
   const ai = aiPlayer;
 
-  let player0;
-  let player1;
   let aiMode = 0;
+  let player0 = player("x", false);
+  let player1 = player("o", true);
   let currentPlayer = player0;
   let gameEnded = false;
 
@@ -205,28 +213,26 @@ const gameController = (() => {
     if (mark === "x") {
       player0 = player("x", false);
       player1 = player("o", true);
+      currentPlayer = player0;
       return;
     }
-    player0 = player("x", true);
-    player1 = player("o", false);
+    if ((mark = "o")) {
+      player0 = player("x", true);
+      player1 = player("o", false);
+      currentPlayer = player0;
+    }
   };
 
+  // const checkWin = () =>
+
   const aiPlayRound = () => {
-    if (grid.move.isTie()) {
-      gameEnded = true;
-      return;
-    }
     const aiMove = ai.move(aiMode);
-    if (board.checkCol.check(aiMove)) {
-      board.grid.set(aiMove);
-      board.checkCol.minus();
-      display();
-      //check win here
-      switchCurrent();
-      return;
+    playRound(aiMove, currentPlayer.getMark());
+    if (currentPlayer.isBot()) {
+      console.log("Invalid move, AI play again!");
+      aiPlayRound();
     }
-    console.log("Invalid move, AI play again!");
-    aiPlayRound();
+    return;
   };
 
   const playRound = (col) => {
@@ -236,13 +242,15 @@ const gameController = (() => {
       return;
     }
     if (board.checkCol.check(col)) {
-      board.grid.set(col);
-      board.checkCol.minus();
+      board.grid.set(col, currentPlayer.getMark());
+      board.checkCol.minus(col);
       display();
       //check win here
       switchCurrent();
+      if (currentPlayer.isBot()) aiPlayRound();
+      return;
     }
-    if (currentPlayer.isBot()) aiPlayRound();
+    console.log("Invalid move, Human play again!");
   };
   display();
 
@@ -256,12 +264,6 @@ const gameController = (() => {
   return { setPlayers, setAiMode, setHumanMark, playRound, reset };
 })();
 
-//this is a shorthand to play game in console when develop
-function p(n) {
-  const game = gameController;
-  game.playRound(n);
-}
-
 //Call game
 (() => {
   const game = gameController;
@@ -269,6 +271,16 @@ function p(n) {
   game.setHumanMark("x"); //'o' if human want to switch
   game.setAiMode(0);
   // game.playRound();
+  const p = (col) => {
+    game.playRound(col);
+  };
+  p(1);
+  p(1);
+  p(1);
+  p(1);
+  p(1);
+  p(1);
+  p(1);
+  p(1);
+  p(1);
 })();
-
-p(4);
