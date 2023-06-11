@@ -7,7 +7,31 @@
   </head>
   <body>
     <h1>Connect Four Game</h1>
+    <div id="buttons">
+      <button class="btn" data-col="0">1</button>
+      <button class="btn" data-col="1">2</button>
+      <button class="btn" data-col="2">3</button>
+      <button class="btn" data-col="3">4</button>
+      <button class="btn" data-col="4">5</button>
+      <button class="btn" data-col="5">6</button>
+      <button class="btn" data-col="6">7</button>
+    </div>
     <div id="game-board"></div>
+    <div id="notes">x's turn.</div>
+    <div id="winner">Winner is<span></span></div>
+    <div id="game-mode">
+      <button id="vsAi">VS AI</button>
+      <button id="vsHu">VS HUMAN</button>
+    </div>
+    <div id="difficulty">
+      <button class="btn-diff" data-diff-0>Easiest</button>
+      <button class="btn-diff" disabled data-diff-1>Easy</button>
+      <button class="btn-diff" disabled data-diff-2>Medium</button>
+      <button class="btn-diff" disabled data-diff-3>Hard</button>
+      <button class="btn-diff" disabled data-diff-4>Unbeatable</button>
+    </div>
+    <p>Easiest is the only available mode for now.</p>
+    <p>Until I learn about minimax algorithm.</p>
     <script src="bundle.js" type="module" defer></script>
   </body>
 </html>
