@@ -8,5 +8,36 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-size: 5rem;
+  font-size: 2rem;
+  text-align: center;
+}
+
+body {
+}
+h1 {
+  text-align: center;
+}
+#buttons {
+  width: 70vmin;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: none;
+}
+.btn {
+  width: 10vmin;
+}
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  height: 60vmin;
+  width: 70vmin;
+  background-color: #ccc;
+  margin: 1rem auto;
 }

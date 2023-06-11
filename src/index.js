@@ -126,7 +126,7 @@ const gameBoard = (() => {
   for (let i = cols - 1; i >= 0; i--) {
     movesLeftOnEachCol.push(rows);
   }
-  console.log(movesLeftOnEachCol); //[6,6,6,6,6,6,6]
+  // console.log(movesLeftOnEachCol); //[6,6,6,6,6,6,6]
   const canMakeMoveOnCol = (col) => movesLeftOnEachCol[col] > 0; //if a specific col has moves left = 0, then return false (means can't make move on that col)
   const minusMovesLeftOnACol = (col) => movesLeftOnEachCol[col]--; //if move is valid then moves left on that col decrease
   const getMovesLeftOnCol = (col) => movesLeftOnEachCol[col]; //Use this to drop token of place mark,example if moves left on a specific col is 6 then wee place mark on board[6-1][col] (rows index)
@@ -168,15 +168,34 @@ const gameBoard = (() => {
 })();
 
 const uiController = (() => {
-  //Display on the console for now
-  const display = (board) => {
-    // console.table(board.map((row) => row.map((col) => col)));
-    console.table(board.map((row) => row.map((col) => col.getValue())));
+  const boardDiv = document.querySelector("#game-board");
+  const colBtn = document.querySelectorAll("[data-col]");
+  console.log(colBtn);
+  colBtn.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      console.log(Number(btn.dataset.col));
+      gameController.playRound(Number(btn.dataset.col));
+    });
+  });
+
+  const display = (row, col, mark) => {
+    const div = document.createElement("div");
+    boardDiv.appendChild(div);
+    div.className = "center";
+    div.style.gridRowStart = row;
+    div.style.gridColumnStart = col + 1;
+    div.innerHTML = mark.toUpperCase();
   };
-  return { display };
+
+  const reset = () => (boardDiv.innerHTML = "");
+
+  const aiInvalid = () => console.log("Invalid move, AI play again!");
+  const huInvalid = () => console.log("Invalid move, Human play again!");
+  return { display, reset, aiInvalid, huInvalid };
 })();
 
-const gameController = (() => {
+//use var for hoisting
+var gameController = (() => {
   const board = gameBoard;
   const ui = uiController;
   const ai = aiPlayer;
@@ -187,14 +206,12 @@ const gameController = (() => {
   let currentPlayer = player0;
   let gameEnded = false;
 
+  const winCases = board.getWinsCombination();
+
   const switchCurrent = () =>
     currentPlayer === player0
       ? (currentPlayer = player1)
       : (currentPlayer = player0);
-
-  const display = () => {
-    ui.display(board.grid.get());
-  };
 
   const setPlayers = (num) => {
     player0 = player("x", false);
@@ -223,13 +240,26 @@ const gameController = (() => {
     }
   };
 
-  // const checkWin = () =>
+  const checkWin = (player) => {
+    // console.log(board.getWinsCombination());
+    for (let winCase of winCases) {
+      let flag = winCase.every(
+        (el) => board.grid.get()[el[0]][el[1]].getValue() === player.getMark()
+      );
+      if (flag) {
+        gameEnded = true;
+        console.log(`${player.getMark()} is the winner!`);
+        return;
+      }
+    }
+  };
 
   const aiPlayRound = () => {
     const aiMove = ai.move(aiMode);
-    playRound(aiMove, currentPlayer.getMark());
+    playRound(aiMove);
     if (currentPlayer.isBot()) {
-      console.log("Invalid move, AI play again!");
+      // console.log("Invalid move, AI play again!");
+      ui.aiInvalid();
       aiPlayRound();
     }
     return;
@@ -243,23 +273,24 @@ const gameController = (() => {
     }
     if (board.checkCol.check(col)) {
       board.grid.set(col, currentPlayer.getMark());
+      let row = board.checkCol.get(col); //because we use this row number to style grid row start so we use the plain number instead of index number (which will have to minus 1)
       board.checkCol.minus(col);
-      display();
-      //check win here
+      ui.display(row, col, currentPlayer.getMark()); //we use index column number so the ui.display() method above should +1 to the col number
+      checkWin(currentPlayer);
       switchCurrent();
-      if (currentPlayer.isBot()) aiPlayRound();
+      if (currentPlayer.isBot() && !gameEnded) aiPlayRound();
       return;
     }
-    console.log("Invalid move, Human play again!");
+    // console.log("Invalid move, Human play again!");
+    ui.huInvalid();
   };
-  display();
 
   const reset = () => {
     gameEnded = false;
     board.grid.reset();
     board.checkCol.reset();
     board.move.reset();
-    display();
+    ui.reset();
   };
   return { setPlayers, setAiMode, setHumanMark, playRound, reset };
 })();
@@ -274,13 +305,4 @@ const gameController = (() => {
   const p = (col) => {
     game.playRound(col);
   };
-  p(1);
-  p(1);
-  p(1);
-  p(1);
-  p(1);
-  p(1);
-  p(1);
-  p(1);
-  p(1);
 })();
