@@ -50,36 +50,118 @@ const gameBoard = (() => {
   let board = [];
 
   for (let i = rows - 1; i >= 0; i--) {
-    board[i] = [];
-    for (let j = cols - 1; j >= 0; j--) {
-      board[i][j] = cell();
-    }
-  }
+    board[i] = Array(cols).fill(cell());
+  } //This works the same way as below
+
+  // for (let i = rows - 1; i >= 0; i--) {
+  //   board[i] = [];
+  //   for (let j = cols - 1; j >= 0; j--) {
+  //     board[i][j] = cell();
+  //   }
+  // }
   let winsCombination = [];
 
-  //horizontal
+  //horizontal (24 combinations)
   for (let i = rows - 1; i >= 0; i--) {
-    for (let j = 6; j > -1; j--) {}
+    for (let j = cols - 1; j > 2; j--) {
+      winsCombination.push([
+        [i, j],
+        [i, j - 1],
+        [i, j - 2],
+        [i, j - 3],
+      ]);
+    }
   }
 
-  //vertical
+  //vertical (21 combinations)
+  for (let i = rows - 1; i > 2; i--) {
+    for (let j = cols - 1; j >= 0; j--) {
+      winsCombination.push([
+        [i, j],
+        [i - 1, j],
+        [i - 2, j],
+        [i - 3, j],
+      ]);
+    }
+  }
 
-  //cross up
+  //cross up (12 combinations)
+  for (let i = rows - 1; i > 2; i--) {
+    for (let j = cols - 1; j > 2; j--) {
+      winsCombination.push([
+        [i, j],
+        [i - 1, j - 1],
+        [i - 2, j - 2],
+        [i - 3, j - 3],
+      ]);
+    }
+  }
 
-  //cross down
+  //cross down (12 combinations)
+  for (let i = 0; i < 3; i++) {
+    for (let j = cols - 1; j > 2; j--) {
+      winsCombination.push([
+        [i, j],
+        [i + 1, j - 1],
+        [i + 2, j - 2],
+        [i + 3, j - 3],
+      ]);
+    }
+  }
+  // console.dir(winsCombination); //69
 
-  const getBoard = () => board;
+  const getWinsCombination = () => winsCombination;
 
-  const setBoard = (r, c, mark) => {
-    board[r][c].setValue(mark);
+  let movesLeft = 42;
+  const minusMoves = () => movesLeft--;
+  const resetMoves = () => (movesLeft = 42);
+  const isTie = () => movesLeft === 0;
+
+  const move = {
+    isTie,
+    minus: minusMoves,
+    reset: resetMoves,
   };
 
-  const reset = () =>
-    (board = board.map((row) => row.map((col) => (col = cell()))));
-  return { getBoard, setBoard, reset };
+  //Use movesLeftOnEachCol so that I don't have to loop through every position of a column to check whether that column is full
+  let movesLeftOnEachCol = Array(cols).fill(rows);
+  console.log(movesLeftOnEachCol); //[6,6,6,6,6,6,6]
+  const canMakeMoveOnCol = (col) => movesLeftOnEachCol[col] > 0; //if a specific col has moves left = 0, then return false (means can't make move on that col)
+  const minusMovesLeftOnACol = (col) => movesLeftOnEachCol[col]--; //if move is valid then moves left on that col decrease
+  const getMovesLeftOnCol = (col) => movesLeftOnEachCol[col]; //Use this to drop token of place mark,example if moves left on a specific col is 6 then wee place mark on board[6-1][col] (rows index)
+  const resetMovesLeftOnEachCol = () => {
+    movesLeftOnEachCol = Array(cols).fill(rows);
+  };
+
+  const checkCol = {
+    check: canMakeMoveOnCol,
+    minus: minusMovesLeftOnACol,
+    get: getMovesLeftOnCol,
+    reset: resetMovesLeftOnEachCol,
+  }; //this object is a mini module to export
+
+  const getBoard = () => board;
+  const setBoard = (c, mark) => {
+    let lowestEmpty = getMovesLeftOnCol(c) - 1;
+    board[lowestEmpty][c] = mark;
+  };
+  const resetBoard = () => {
+    board = [];
+    for (let i = rows - 1; i >= 0; i--) {
+      board[i] = Array(cols).fill(cell());
+    }
+  };
+  const grid = {
+    get: getBoard,
+    set: setBoard,
+    reset: resetBoard,
+  };
+
+  return { move, grid, checkCol, getWinsCombination };
 })();
 
 const uiController = (() => {
+  //Display on the console for now
   const display = (board) => {
     console.table(board.map((r) => r.map((c) => c.getValue())));
   };
@@ -95,17 +177,15 @@ const gameController = (() => {
   let player1;
   let aiMode = 0;
   let currentPlayer = player0;
-  let moves = 42;
-  let gameEnd = false;
+  let gameEnded = false;
 
-  const isEnd = () => gameEnd;
-  const resetEnd = () => (gameEnd = true);
-  const isTie = () => moves === 0;
-  const minusMoves = () => moves--;
-  const resetMoves = () => (moves = 42);
+  const switchCurrent = () =>
+    currentPlayer === player0
+      ? (currentPlayer = player1)
+      : (currentPlayer = player0);
 
   const display = () => {
-    ui.display(board.getBoard());
+    ui.display(board.grid.get());
   };
 
   const setPlayers = (num) => {
@@ -131,23 +211,56 @@ const gameController = (() => {
     player1 = player("o", false);
   };
 
-  const playRound = () => {};
+  const aiPlayRound = () => {
+    if (grid.move.isTie()) {
+      gameEnded = true;
+      return;
+    }
+    const aiMove = ai.move(aiMode);
+    if (board.checkCol.check(aiMove)) {
+      board.grid.set(aiMove);
+      board.checkCol.minus();
+      display();
+      //check win here
+      switchCurrent();
+      return;
+    }
+    console.log("Invalid move, AI play again!");
+    aiPlayRound();
+  };
+
+  const playRound = (col) => {
+    if (gameEnded) return;
+    if (board.move.isTie()) {
+      gameEnded = true;
+      return;
+    }
+    if (board.checkCol.check(col)) {
+      board.grid.set(col);
+      board.checkCol.minus();
+      display();
+      //check win here
+      switchCurrent();
+    }
+    if (currentPlayer.isBot()) aiPlayRound();
+  };
   display();
 
   const reset = () => {
-    board.reset();
-    resetMoves();
-    resetEnd();
-    ui.display();
+    gameEnded = false;
+    board.grid.reset();
+    board.checkCol.reset();
+    board.move.reset();
+    display();
   };
-  return { setPlayers, setAiMode, setHumanMark, playRound, isEnd, reset };
+  return { setPlayers, setAiMode, setHumanMark, playRound, reset };
 })();
 
 //this is a shorthand to play game in console when develop
-const p = (n) => {
+function p(n) {
   const game = gameController;
   game.playRound(n);
-};
+}
 
 //Call game
 (() => {
@@ -157,3 +270,5 @@ const p = (n) => {
   game.setAiMode(0);
   // game.playRound();
 })();
+
+p(4);
