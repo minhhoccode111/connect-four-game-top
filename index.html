@@ -17,12 +17,22 @@
       <button class="btn" data-col="6">7</button>
     </div>
     <div id="game-board"></div>
-    <div id="notes">x's turn.</div>
-    <div id="winner">Winner is<span></span></div>
-    <div id="game-mode">
-      <button id="vsAi">VS AI</button>
-      <button id="vsHu">VS HUMAN</button>
-    </div>
+    <p>You can play with the keyboard. From 1 to 7 to make moves. Enter to reset.</p>
+    <p>Spoiler: It seems like impossible (and interesting)</p> 
+      <p>when you try to get a tie game (not winning the game) with this easiest AI. </p>
+      <div><button id="reset">Reset</button></div>
+      <h2 id="show-game-mode">Human vs AI</h2>
+      <div id="game-mode">
+        <button id="vsAi" >HU VS AI</button>
+        <button id="vsHu" >HU VS HU</button>
+      </div>
+      <h2 id="show-human-mark">Human is X</h2>
+      <div id="hu-mark">
+        <button id="mark-x">X</button>
+        <button id="mark-o">O</button>
+      </div>
+      <div id="notes">It is player X's turn.</div>
+      <div id="message">Winner is:<span id="winner"></span></span></div>
     <div id="difficulty">
       <button class="btn-diff" data-diff-0>Easiest</button>
       <button class="btn-diff" disabled data-diff-1>Easy</button>
