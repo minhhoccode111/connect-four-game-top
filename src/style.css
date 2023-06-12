@@ -12,10 +12,16 @@
   text-align: center;
 }
 
-body {
+body > * {
+  margin-bottom: 1rem;
 }
 h1 {
   text-align: center;
+}
+button {
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 1rem;
 }
 #buttons {
   width: 70vmin;
@@ -23,6 +29,37 @@ h1 {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
+#notes,
+#message,
+#winner {
+  font-size: 3rem;
+}
+
+#vsAi:disabled,
+#vsHu:disabled,
+#mark-x:disabled,
+#mark-o:disabled {
+  /* border: 3px solid #000; */
+  border-radius: 10px;
+}
+
+#reset {
+  font-size: 2rem;
+  background-color: darkred;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 1rem;
+}
+
+#game-mode button {
+  padding: 1rem;
+}
+
+.btn-diff {
+  padding: 1rem;
+}
+
 .center {
   display: flex;
   align-items: center;

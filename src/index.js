@@ -47,10 +47,6 @@ const gameBoard = (() => {
   const cols = 7;
   let board = [];
 
-  // for (let i = rows - 1; i >= 0; i--) {
-  //   board[i] = Array(cols).fill(cell());
-  // } //This works the same way as below
-
   for (let i = rows - 1; i >= 0; i--) {
     board[i] = [];
     for (let j = cols - 1; j >= 0; j--) {
@@ -168,30 +164,140 @@ const gameBoard = (() => {
 })();
 
 const uiController = (() => {
-  const boardDiv = document.querySelector("#game-board");
+  const boardDiv = document.getElementById("game-board");
+  const notes = document.getElementById("notes");
   const colBtn = document.querySelectorAll("[data-col]");
-  console.log(colBtn);
-  colBtn.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      console.log(Number(btn.dataset.col));
-      gameController.playRound(Number(btn.dataset.col));
-    });
-  });
+  const winner = document.getElementById("winner");
+  const resetBtn = document.getElementById("reset");
+  const vsAiBtn = document.getElementById("vsAi");
+  const vsHuBtn = document.getElementById("vsHu");
+  const xBtn = document.getElementById("mark-x");
+  const oBtn = document.getElementById("mark-o");
+  const showGameMode = document.getElementById("show-game-mode");
+  const showHumanMark = document.getElementById("show-human-mark");
+
+  const d = "disabled";
 
   const display = (row, col, mark) => {
     const div = document.createElement("div");
     boardDiv.appendChild(div);
     div.className = "center";
+    div.innerHTML = mark.toUpperCase();
     div.style.gridRowStart = row;
     div.style.gridColumnStart = col + 1;
-    div.innerHTML = mark.toUpperCase();
+    if (mark === "x") div.style.backgroundColor = "lightpink";
+    if (mark === "o") div.style.backgroundColor = "lightblue";
   };
 
-  const reset = () => (boardDiv.innerHTML = "");
+  const reset = () => {
+    boardDiv.innerHTML = "";
+    notes.textContent = "Game restart.";
+    winner.textContent = "";
+    gameController.reset();
+  };
 
-  const aiInvalid = () => console.log("Invalid move, AI play again!");
-  const huInvalid = () => console.log("Invalid move, Human play again!");
-  return { display, reset, aiInvalid, huInvalid };
+  const showPlayerTurn = (player) =>
+    (notes.textContent = `It is player ${player
+      .getMark()
+      .toUpperCase()}'s turn.`);
+
+  const invalid = (player) =>
+    (notes.textContent = `Invalid move, ${player
+      .getMark()
+      .toUpperCase()} play again!`);
+
+  const showWinner = (player) =>
+    (winner.textContent = `Player ${player.getMark().toUpperCase()}!`);
+
+  const tie = () => (notes.textContent = "Tie Game!");
+
+  const xDisable = (boolean) => {
+    if (boolean) {
+      xBtn.setAttribute(d, true);
+      oBtn.removeAttribute(d);
+      showHumanMark.textContent = `Human is X`;
+    } else {
+      oBtn.setAttribute(d, true);
+      xBtn.removeAttribute(d);
+      showHumanMark.textContent = `Human is O`;
+    }
+  };
+
+  const aiDisable = (boolean) => {
+    if (boolean) {
+      vsAiBtn.setAttribute(d, true);
+      vsHuBtn.removeAttribute(d);
+      showGameMode.textContent = "Human vs AI";
+    } else {
+      vsHuBtn.setAttribute(d, true);
+      vsAiBtn.removeAttribute(d);
+      showGameMode.textContent = "Human vs Human";
+    }
+  };
+  const init = () => {
+    gameController.setPlayers(1);
+    gameController.setHumanMark("x"); //'o' if human want to switch
+    gameController.setAiMode(0);
+    xDisable(true);
+    aiDisable(true);
+  };
+
+  colBtn.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      gameController.playRound(Number(btn.dataset.col));
+    });
+  });
+
+  vsAiBtn.addEventListener("click", () => {
+    gameController.setPlayers(1);
+    gameController.setHumanMark("x"); //'o' if human want to switch
+    reset();
+    aiDisable(true);
+    xDisable(true);
+  });
+
+  vsHuBtn.addEventListener("click", () => {
+    gameController.setPlayers(2);
+    reset();
+    aiDisable(false);
+    xBtn.setAttribute(d, true);
+    oBtn.setAttribute(d, true);
+    showHumanMark.textContent = "";
+  });
+
+  xBtn.addEventListener("click", () => {
+    gameController.setHumanMark("x"); //'o' if human want to switch
+    gameController.setPlayers(1);
+    reset();
+    aiDisable(true);
+    xDisable(true);
+  });
+
+  oBtn.addEventListener("click", () => {
+    gameController.setPlayers(1);
+    gameController.setHumanMark("o");
+    reset();
+    aiDisable(true);
+    xDisable(false);
+  });
+
+  //play with keyboard
+  window.addEventListener("keyup", (e) => {
+    const arr = ["1", "2", "3", "4", "5", "6", "7"];
+    if (arr.includes(e.key)) gameController.playRound(arr.indexOf(e.key));
+    if (e.key === "Enter") reset();
+  });
+
+  resetBtn.addEventListener("click", reset);
+  return {
+    tie,
+    display,
+    init,
+    reset,
+    invalid,
+    turn: showPlayerTurn,
+    winner: showWinner,
+  };
 })();
 
 //use var for hoisting
@@ -220,6 +326,7 @@ var gameController = (() => {
       return;
     }
     player1 = player("o", false);
+    currentPlayer = player0;
   };
 
   const setAiMode = (num) => {
@@ -237,6 +344,7 @@ var gameController = (() => {
       player0 = player("x", true);
       player1 = player("o", false);
       currentPlayer = player0;
+      aiPlayRound();
     }
   };
 
@@ -248,7 +356,8 @@ var gameController = (() => {
       );
       if (flag) {
         gameEnded = true;
-        console.log(`${player.getMark()} is the winner!`);
+        // console.log(`${player.getMark()} is the winner!`);
+        ui.winner(currentPlayer);
         return;
       }
     }
@@ -259,8 +368,13 @@ var gameController = (() => {
     playRound(aiMove);
     if (currentPlayer.isBot()) {
       // console.log("Invalid move, AI play again!");
-      ui.aiInvalid();
+      ui.invalid(currentPlayer);
       aiPlayRound();
+    }
+    if (board.move.isTie()) {
+      gameEnded = true;
+      ui.tie();
+      return;
     }
     return;
   };
@@ -269,40 +383,45 @@ var gameController = (() => {
     if (gameEnded) return;
     if (board.move.isTie()) {
       gameEnded = true;
+      ui.tie();
       return;
     }
     if (board.checkCol.check(col)) {
       board.grid.set(col, currentPlayer.getMark());
       let row = board.checkCol.get(col); //because we use this row number to style grid row start so we use the plain number instead of index number (which will have to minus 1)
       board.checkCol.minus(col);
+      board.move.minus();
       ui.display(row, col, currentPlayer.getMark()); //we use index column number so the ui.display() method above should +1 to the col number
       checkWin(currentPlayer);
       switchCurrent();
-      if (currentPlayer.isBot() && !gameEnded) aiPlayRound();
+      ui.turn(currentPlayer);
+      if (currentPlayer.isBot() && !gameEnded) {
+        if (board.move.isTie()) {
+          gameEnded = true;
+          ui.tie();
+          return;
+        }
+        aiPlayRound();
+      }
       return;
     }
     // console.log("Invalid move, Human play again!");
-    ui.huInvalid();
+    ui.invalid(currentPlayer);
   };
 
   const reset = () => {
     gameEnded = false;
+    currentPlayer = player0;
     board.grid.reset();
     board.checkCol.reset();
     board.move.reset();
-    ui.reset();
+    if (currentPlayer.isBot()) aiPlayRound();
+    // ui.reset();
   };
-  return { setPlayers, setAiMode, setHumanMark, playRound, reset };
+  return { setPlayers, setAiMode, setHumanMark, aiPlayRound, playRound, reset };
 })();
 
 //Call game
-(() => {
-  const game = gameController;
-  game.setPlayers(1);
-  game.setHumanMark("x"); //'o' if human want to switch
-  game.setAiMode(0);
-  // game.playRound();
-  const p = (col) => {
-    game.playRound(col);
-  };
-})();
+window.addEventListener("DOMContentLoaded", () => {
+  uiController.init();
+});
