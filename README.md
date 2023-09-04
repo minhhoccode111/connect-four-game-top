@@ -1,4 +1,4 @@
-# connectFourGame
+# Connect Four Game The Odin Project
 
 Connect Four Game using composition, the module pattern, factory functions, webpack
 
@@ -13,6 +13,7 @@ You can choose your mark when playing against AI (choose X to play first move)
 
 I am going to update this game's difficulties after I learn Minimax algorithms (and know how to apply to this project :) )
 
-[All Projects's live demo](https://minhhoccode111.github.io/allProjectssLiveDemo/)
+[View all projects' live demos](https://minhhoccode111.github.io/all-projects-live-demos/) 
 
-[Connect Four Game live demo](https://minhhoccode111.github.io/connectFourGame/)
+[Connect Four Game](https://minhhoccode111.github.io/connect-four-game-top/) 
+
